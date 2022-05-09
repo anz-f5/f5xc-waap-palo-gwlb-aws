@@ -1,5 +1,5 @@
 resource "aws_vpc" "spokeVpc2" {
-  cidr_block           = var.spokeVpc1CidrBlock
+  cidr_block           = var.spokeVpc2CidrBlock
   instance_tenancy     = "default"
   enable_dns_support   = "true"
   enable_dns_hostnames = "true"
@@ -38,5 +38,15 @@ resource "aws_subnet" "spokeVpc2-data" {
 
   tags = {
     Name = "${var.prefix}-spokeVpc2-data-${var.spokeVpc2[count.index].name}"
+  }
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc2TsgAttach" {
+  subnet_ids         = [for subnet in aws_subnet.spokeVpc2-data : subnet.id]
+  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  vpc_id             = aws_vpc.spokeVpc2.id
+
+  tags = {
+    "Name" = "${var.prefix}-spokeVpc2TsgAttach"
   }
 }

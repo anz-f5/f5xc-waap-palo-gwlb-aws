@@ -1,4 +1,3 @@
-
 resource "aws_vpc" "waapVpc" {
   cidr_block           = var.waapVpcCidrBlock
   instance_tenancy     = "default"
@@ -73,5 +72,15 @@ resource "aws_internet_gateway" "waapVpc-igw" {
 
   tags = {
     Name = "${var.prefix}-waapVpc-igw"
+  }
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
+  subnet_ids         = [for subnet in aws_subnet.servicesVpc-data : subnet.id]
+  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  vpc_id             = aws_vpc.servicesVpc.id
+
+  tags = {
+    "Name" = "${var.prefix}-servicesVpcTsgAttach"
   }
 }

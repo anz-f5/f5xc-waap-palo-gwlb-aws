@@ -19,23 +19,3 @@ resource "aws_ec2_transit_gateway" "transitGateway" {
     "Name" = "${var.prefix}-tsg"
   }
 }
-
-resource "aws_ec2_transit_gateway_vpc_attachment" "waapTsgAttach" {
-  subnet_ids         = [for subnet in aws_subnet.waapVpc-external : subnet.id]
-  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
-  vpc_id             = aws_vpc.waapVpc.id
-
-  tags = {
-    "Name" = "${var.prefix}-waapVpcTsgAttach"
-  }
-}
-
-resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
-  subnet_ids         = [for subnet in aws_subnet.servicesVpc-data : subnet.id]
-  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
-  vpc_id             = aws_vpc.servicesVpc.id
-
-  tags = {
-    "Name" = "${var.prefix}-servicesVpcTsgAttach"
-  }
-}

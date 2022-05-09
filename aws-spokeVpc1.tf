@@ -40,3 +40,13 @@ resource "aws_subnet" "spokeVpc1-data" {
     Name = "${var.prefix}-spokeVpc1-data-${var.spokeVpc1[count.index].name}"
   }
 }
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc1TsgAttach" {
+  subnet_ids         = [for subnet in aws_subnet.spokeVpc1-data : subnet.id]
+  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  vpc_id             = aws_vpc.spokeVpc1.id
+
+  tags = {
+    "Name" = "${var.prefix}-spokeVpc1TsgAttach"
+  }
+}
