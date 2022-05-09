@@ -90,6 +90,11 @@ module "vmseries-modules" {
   vpc_id           = aws_vpc.servicesVpc.id
   subnets          = { for az in aws_subnet.servicesVpc-data : az.availability_zone => { "id" : az.id } }
   target_instances = { for instance in aws_instance.fwInstance : instance.id => { "id" = instance.id } }
+
+  depends_on = [
+    aws_subnet.servicesVpc-data,
+    aws_instance.fwInstance
+  ]
 }
 
 resource "aws_network_interface" "fw-mgmt-eni" {
