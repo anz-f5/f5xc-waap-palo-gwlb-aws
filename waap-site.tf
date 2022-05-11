@@ -84,7 +84,7 @@ module "external-nlb" {
   load_balancer_type = "network"
 
   vpc_id  = aws_vpc.waapVpc.id
-  subnets = [for subnet in aws_subnet.waapVpc-external : subnet.id]
+  subnets = [for subnet in aws_subnet.waapVpc-extNlb : subnet.id]
 
   target_groups = [
     {
@@ -136,7 +136,7 @@ module "internal-nlb" {
   internal           = true
 
   vpc_id  = aws_vpc.waapVpc.id
-  subnets = [for subnet in aws_subnet.waapVpc-internal : subnet.id]
+  subnets = [for subnet in aws_subnet.waapVpc-intNlb : subnet.id]
 
   target_groups = [
     {

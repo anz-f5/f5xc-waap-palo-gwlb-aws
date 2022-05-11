@@ -8,6 +8,6 @@ variable "spokeVpc1" {
   description = "spokeVpc1"
   type        = list(map(string))
   default = [
-    { name = "az1", az = "us-east-1a", data_cidr = "10.2.0.0/24" }
+    { name = "az1", az = "us-east-1a", data_cidr = "10.2.0.0/24", tsg_cidr = "10.2.1.0/24" }
   ]
 }

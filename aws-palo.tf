@@ -61,6 +61,18 @@ resource "aws_subnet" "servicesVpc-mgmt" {
   }
 }
 
+resource "aws_subnet" "servicesVpc-tsg" {
+  vpc_id                  = aws_vpc.servicesVpc.id
+  count                   = length(var.servicesVpc)
+  cidr_block              = var.servicesVpc[count.index].tsg_cidr
+  map_public_ip_on_launch = "false"
+  availability_zone       = var.servicesVpc[count.index].az
+
+  tags = {
+    Name = "${var.prefix}-servicesVpc-tsg-${var.servicesVpc[count.index].name}"
+  }
+}
+
 resource "aws_route_table" "servicesVpc-mgmt-rt" {
   vpc_id = aws_vpc.servicesVpc.id
 
@@ -226,12 +238,12 @@ resource "aws_instance" "fwInstance" {
   }
 }
 
-resource "aws_ec2_transit_gateway_vpc_attachment" "waapTsgAttach" {
-  subnet_ids         = [for subnet in aws_subnet.waapVpc-external : subnet.id]
+resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
+  subnet_ids         = [for subnet in aws_subnet.servicesVpc-tsg : subnet.id]
   transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
-  vpc_id             = aws_vpc.waapVpc.id
+  vpc_id             = aws_vpc.servicesVpc.id
 
   tags = {
-    "Name" = "${var.prefix}-waapVpcTsgAttach"
+    "Name" = "${var.prefix}-servicesVpcTsgAttach"
   }
 }

@@ -41,12 +41,58 @@ resource "aws_subnet" "spokeVpc2-data" {
   }
 }
 
+resource "aws_subnet" "spokeVpc2-tsg" {
+  vpc_id                  = aws_vpc.spokeVpc2.id
+  count                   = length(var.spokeVpc2)
+  cidr_block              = var.spokeVpc2[count.index].tsg_cidr
+  map_public_ip_on_launch = "false"
+  availability_zone       = var.spokeVpc2[count.index].az
+
+  tags = {
+    Name = "${var.prefix}-spokeVpc2-tsg-${var.spokeVpc2[count.index].name}"
+  }
+}
+
 resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc2TsgAttach" {
-  subnet_ids         = [for subnet in aws_subnet.spokeVpc2-data : subnet.id]
+  subnet_ids         = [for subnet in aws_subnet.spokeVpc2-tsg : subnet.id]
   transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
   vpc_id             = aws_vpc.spokeVpc2.id
 
   tags = {
     "Name" = "${var.prefix}-spokeVpc2TsgAttach"
   }
+}
+
+module "spokeVpc2-ec2Instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "~> 3.0"
+
+  name                   = "${var.prefix}-spokeVpc2Ubuntu1"
+  count                  = length(var.spokeVpc2)
+  ami                    = "ami-0c4f7023847b90238"
+  instance_type          = "t2.micro"
+  key_name               = aws_key_pair.ssh-keypair.key_name
+  monitoring             = false
+  vpc_security_group_ids = [aws_security_group.spokeVpc2-sg.id]
+  subnet_id              = aws_subnet.spokeVpc2-data[count.index].id
+}
+
+resource "aws_route_table" "spokeVpc2-main-rt" {
+  vpc_id = aws_vpc.spokeVpc2.id
+
+  tags = {
+    Name = "${var.prefix}-spokeVpc2-main-rt"
+  }
+}
+
+resource "aws_route" "spokeVpc2-default-route" {
+  route_table_id         = aws_route_table.spokeVpc2-main-rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = aws_ec2_transit_gateway.transitGateway.id
+}
+
+resource "aws_route_table_association" "spokeVpc2-main-association" {
+  count          = length(aws_subnet.spokeVpc2-data)
+  subnet_id      = aws_subnet.spokeVpc2-data[count.index].id
+  route_table_id = aws_route_table.spokeVpc2-main-rt.id
 }
