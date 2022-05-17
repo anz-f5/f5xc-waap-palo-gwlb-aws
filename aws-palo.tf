@@ -106,6 +106,93 @@ resource "aws_route_table_association" "servicesVpc-mgmt-association" {
   route_table_id = aws_route_table.servicesVpc-mgmt-rt.id
 }
 
+resource "aws_route_table" "servicesVpc-gwlbEp2-rt" {
+
+  vpc_id = aws_vpc.servicesVpc.id
+
+  route {
+    cidr_block         = "10.1.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  route {
+    cidr_block         = "10.2.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  route {
+    cidr_block         = "10.3.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  tags = {
+    Name = "${var.prefix}-servicesVpc-gwlbEp2-rt"
+  }
+}
+
+resource "aws_route_table_association" "servicesVpc-gwlbEp2-association" {
+  count          = length(aws_subnet.servicesVpc-mgmt)
+  subnet_id      = aws_subnet.servicesVpc-ep2[count.index].id
+  route_table_id = aws_route_table.servicesVpc-gwlbEp2-rt.id
+}
+
+resource "aws_route_table" "servicesVpc-twgSubnet1-rt" {
+
+  vpc_id = aws_vpc.servicesVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep2["next_hop_set"].ids["us-east-1a"]
+  }
+
+  tags = {
+    Name = "${var.prefix}-servicesVpc-twgSubnet1-rt"
+  }
+}
+
+resource "aws_route_table_association" "servicesVpc-twgSubnet1-association" {
+  subnet_id      = aws_subnet.servicesVpc-tsg[0].id
+  route_table_id = aws_route_table.servicesVpc-twgSubnet1-rt.id
+}
+
+resource "aws_route_table" "servicesVpc-twgSubnet2-rt" {
+
+  vpc_id = aws_vpc.servicesVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep2["next_hop_set"].ids["us-east-1b"]
+  }
+
+  tags = {
+    Name = "${var.prefix}-servicesVpc-twgSubnet2-rt"
+  }
+}
+
+resource "aws_route_table_association" "servicesVpc-twgSubnet2-association" {
+  subnet_id      = aws_subnet.servicesVpc-tsg[1].id
+  route_table_id = aws_route_table.servicesVpc-twgSubnet2-rt.id
+}
+
+resource "aws_route_table" "servicesVpc-twgSubnet3-rt" {
+
+  vpc_id = aws_vpc.servicesVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep2["next_hop_set"].ids["us-east-1c"]
+  }
+
+  tags = {
+    Name = "${var.prefix}-servicesVpc-twgSubnet3-rt"
+  }
+}
+
+resource "aws_route_table_association" "servicesVpc-twgSubnet3-association" {
+  subnet_id      = aws_subnet.servicesVpc-tsg[2].id
+  route_table_id = aws_route_table.servicesVpc-twgSubnet3-rt.id
+}
+
 module "vmseries-modules" {
   source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb"
   version = "0.2.0"
@@ -125,6 +212,17 @@ module "vmseries-modules_gwlb_ep1" {
   gwlb_service_name = module.vmseries-modules.endpoint_service.service_name
   vpc_id            = aws_vpc.waapVpc.id
   subnets           = { for az in aws_subnet.waapVpc-ep1 : az.availability_zone => { "id" : az.id } }
+
+}
+
+module "vmseries-modules_gwlb_ep2" {
+  source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb_endpoint_set"
+  version = "0.2.0"
+
+  name              = "${var.prefix}-ep2-1"
+  gwlb_service_name = module.vmseries-modules.endpoint_service.service_name
+  vpc_id            = aws_vpc.servicesVpc.id
+  subnets           = { for az in aws_subnet.servicesVpc-ep2 : az.availability_zone => { "id" : az.id } }
 
 }
 
