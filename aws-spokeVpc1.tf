@@ -53,15 +53,6 @@ resource "aws_subnet" "spokeVpc1-tsg" {
   }
 }
 
-resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc1TsgAttach" {
-  subnet_ids         = [for subnet in aws_subnet.spokeVpc1-tsg : subnet.id]
-  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
-  vpc_id             = aws_vpc.spokeVpc1.id
-
-  tags = {
-    "Name" = "${var.prefix}-spokeVpc1TsgAttach"
-  }
-}
 
 module "spokeVpc1-ec2Instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"

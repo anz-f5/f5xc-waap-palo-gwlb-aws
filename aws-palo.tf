@@ -73,6 +73,18 @@ resource "aws_subnet" "servicesVpc-tsg" {
   }
 }
 
+resource "aws_subnet" "servicesVpc-ep2" {
+  vpc_id                  = aws_vpc.servicesVpc.id
+  count                   = length(var.servicesVpc)
+  cidr_block              = var.servicesVpc[count.index].ep2_cidr
+  map_public_ip_on_launch = "false"
+  availability_zone       = var.servicesVpc[count.index].az
+
+  tags = {
+    Name = "${var.prefix}-servicesVpc-ep2-${var.servicesVpc[count.index].name}"
+  }
+}
+
 resource "aws_route_table" "servicesVpc-mgmt-rt" {
   vpc_id = aws_vpc.servicesVpc.id
 
@@ -103,10 +115,17 @@ module "vmseries-modules" {
   subnets          = { for az in aws_subnet.servicesVpc-data : az.availability_zone => { "id" : az.id } }
   target_instances = { for instance in aws_instance.fwInstance : instance.id => { "id" = instance.id } }
 
-  depends_on = [
-    aws_subnet.servicesVpc-data,
-    aws_instance.fwInstance
-  ]
+}
+
+module "vmseries-modules_gwlb_ep1" {
+  source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb_endpoint_set"
+  version = "0.2.0"
+
+  name              = "${var.prefix}-ep1-1"
+  gwlb_service_name = module.vmseries-modules.endpoint_service.service_name
+  vpc_id            = aws_vpc.waapVpc.id
+  subnets           = { for az in aws_subnet.waapVpc-ep1 : az.availability_zone => { "id" : az.id } }
+
 }
 
 resource "aws_network_interface" "fw-mgmt-eni" {
@@ -114,6 +133,7 @@ resource "aws_network_interface" "fw-mgmt-eni" {
   subnet_id         = aws_subnet.servicesVpc-mgmt[count.index].id
   security_groups   = [aws_security_group.servicesVpc-sg.id]
   source_dest_check = "false"
+
   tags = {
     Name = "${var.prefix}-fw-mgmt-eni-${var.servicesVpc[count.index].name}"
   }
@@ -235,15 +255,5 @@ resource "aws_instance" "fwInstance" {
   key_name = aws_key_pair.ssh-keypair.key_name
   tags = {
     Name = "${var.prefix}-fw-${var.servicesVpc[count.index].name}"
-  }
-}
-
-resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
-  subnet_ids         = [for subnet in aws_subnet.servicesVpc-tsg : subnet.id]
-  transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
-  vpc_id             = aws_vpc.servicesVpc.id
-
-  tags = {
-    "Name" = "${var.prefix}-servicesVpcTsgAttach"
   }
 }
