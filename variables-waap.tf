@@ -25,3 +25,9 @@ variable "waapVpc" {
     { name = "az3", az = "us-east-1c", external_cidr = "10.1.2.0/24", internal_cidr = "10.1.12.0/24", workload_cidr = "10.1.22.0/24", ep1_cidr = "10.1.32.0/24", tsg_cidr = "10.1.42.0/24", extNlb_cidr = "10.1.52.0/24", intNlb_cidr = "10.1.62.0/24" }
   ]
 }
+
+variable "volIgw" {
+  type        = string
+  description = "IGW created by Volterra"
+  default     = "igw-02d6ff4bf9198176d"
+}

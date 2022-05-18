@@ -75,98 +75,6 @@ resource "volterra_aws_vpc_site" "waapVpc-site" {
   }
 }
 
-module "external-nlb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "~> 6.0"
-
-  name = "${var.prefix}-waapVpc-external-nlb"
-
-  load_balancer_type = "network"
-
-  vpc_id  = aws_vpc.waapVpc.id
-  subnets = [for subnet in aws_subnet.waapVpc-extNlb : subnet.id]
-
-  target_groups = [
-    {
-      name_prefix      = var.prefix
-      backend_protocol = "TCP"
-      backend_port     = 80
-      target_type      = "ip"
-    },
-    {
-      name_prefix      = var.prefix
-      backend_protocol = "TCP"
-      backend_port     = 443
-      target_type      = "ip"
-    },
-    {
-      name_prefix      = var.prefix
-      backend_protocol = "TCP"
-      backend_port     = 6443
-      target_type      = "ip"
-    }
-  ]
-
-  http_tcp_listeners = [
-    {
-      port               = 80
-      protocol           = "TCP"
-      target_group_index = 0
-    },
-    {
-      port               = 443
-      protocol           = "TCP"
-      target_group_index = 1
-    },
-    {
-      port               = 6443
-      protocol           = "TCP"
-      target_group_index = 2
-    }
-  ]
-}
-
-module "internal-nlb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "~> 6.0"
-
-  name = "${var.prefix}-waapVpc-internal-nlb"
-
-  load_balancer_type = "network"
-  internal           = true
-
-  vpc_id  = aws_vpc.waapVpc.id
-  subnets = [for subnet in aws_subnet.waapVpc-intNlb : subnet.id]
-
-  target_groups = [
-    {
-      name_prefix      = var.prefix
-      backend_protocol = "TCP"
-      backend_port     = 80
-      target_type      = "ip"
-    },
-    {
-      name_prefix      = var.prefix
-      backend_protocol = "TCP"
-      backend_port     = 443
-      target_type      = "ip"
-    }
-  ]
-
-  http_tcp_listeners = [
-    {
-      port               = 80
-      protocol           = "TCP"
-      target_group_index = 0
-    },
-    {
-      port               = 443
-      protocol           = "TCP"
-      target_group_index = 1
-    }
-  ]
-}
-
 resource "null_resource" "wait_for_aws_mns" {
   triggers = {
     depends = volterra_aws_vpc_site.waapVpc-site.id
@@ -181,3 +89,25 @@ resource "volterra_tf_params_action" "apply_aws_vpc" {
   wait_for_action  = true
   ignore_on_update = false
 }
+
+
+resource "aws_route_table" "waapVpc-intNlb-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block         = "0.0.0.0/0"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+
+  }
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-intNlb-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-intNlb-association" {
+  count          = length(aws_subnet.waapVpc-intNlb)
+  subnet_id      = aws_subnet.waapVpc-intNlb[count.index].id
+  route_table_id = aws_route_table.waapVpc-intNlb-rt.id
+}
+

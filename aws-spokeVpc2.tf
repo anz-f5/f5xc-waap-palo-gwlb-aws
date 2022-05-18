@@ -57,32 +57,63 @@ module "spokeVpc2-ec2Instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "~> 3.0"
 
-  name                   = "${var.prefix}-spokeVpc2Ubuntu1"
-  count                  = length(var.spokeVpc2)
-  ami                    = "ami-0c4f7023847b90238"
-  instance_type          = "t2.micro"
-  key_name               = aws_key_pair.ssh-keypair.key_name
-  monitoring             = false
-  vpc_security_group_ids = [aws_security_group.spokeVpc2-sg.id]
-  subnet_id              = aws_subnet.spokeVpc2-data[count.index].id
+  name                        = "${var.prefix}-spokeVpc2Ubuntu1"
+  count                       = length(var.spokeVpc2)
+  ami                         = "ami-0c4f7023847b90238"
+  instance_type               = "t2.micro"
+  key_name                    = aws_key_pair.ssh-keypair.key_name
+  monitoring                  = false
+  vpc_security_group_ids      = [aws_security_group.spokeVpc2-sg.id]
+  subnet_id                   = aws_subnet.spokeVpc2-data[count.index].id
+  associate_public_ip_address = "true"
+
 }
 
 resource "aws_route_table" "spokeVpc2-main-rt" {
   vpc_id = aws_vpc.spokeVpc2.id
+
+  route {
+    cidr_block         = "0.0.0.0/0"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  route {
+    cidr_block = "1.123.221.0/24"
+    gateway_id = aws_internet_gateway.spokeVpc2-igw.id
+  }
+
+  route {
+    cidr_block = "54.165.17.230/32"
+    gateway_id = aws_internet_gateway.spokeVpc2-igw.id
+  }
 
   tags = {
     Name = "${var.prefix}-spokeVpc2-main-rt"
   }
 }
 
-resource "aws_route" "spokeVpc2-default-route" {
-  route_table_id         = aws_route_table.spokeVpc2-main-rt.id
-  destination_cidr_block = "0.0.0.0/0"
-  transit_gateway_id     = aws_ec2_transit_gateway.transitGateway.id
-}
-
 resource "aws_route_table_association" "spokeVpc2-main-association" {
   count          = length(aws_subnet.spokeVpc2-data)
   subnet_id      = aws_subnet.spokeVpc2-data[count.index].id
   route_table_id = aws_route_table.spokeVpc2-main-rt.id
+}
+
+resource "aws_internet_gateway" "spokeVpc2-igw" {
+  vpc_id = aws_vpc.spokeVpc2.id
+
+  tags = {
+    Name = "${var.prefix}-spokeVpc2-igw"
+  }
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc2TsgAttach" {
+  subnet_ids                                      = [for subnet in aws_subnet.spokeVpc2-tsg : subnet.id]
+  transit_gateway_id                              = aws_ec2_transit_gateway.transitGateway.id
+  vpc_id                                          = aws_vpc.spokeVpc2.id
+  transit_gateway_default_route_table_association = "false"
+  transit_gateway_default_route_table_propagation = "false"
+
+  tags = {
+    "Name" = "${var.prefix}-spokeVpc2TsgAttach"
+  }
 }

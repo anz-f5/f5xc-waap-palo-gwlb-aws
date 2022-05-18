@@ -1,0 +1,104 @@
+module "vmseries-modules_gwlb_ep1" {
+  source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb_endpoint_set"
+  version = "0.2.0"
+
+  name              = "${var.prefix}-ep1-1"
+  gwlb_service_name = module.vmseries-modules_gwlb.endpoint_service.service_name
+  vpc_id            = aws_vpc.waapVpc.id
+  subnets           = { for az in aws_subnet.waapVpc-ep1 : az.availability_zone => { "id" : az.id } }
+
+}
+
+resource "aws_route_table" "waapVpc-ingress-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "10.1.50.0/24"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1a"]
+  }
+
+  route {
+    cidr_block      = "10.1.51.0/24"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1b"]
+  }
+
+  route {
+    cidr_block      = "10.1.52.0/24"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1c"]
+  }
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-ingress-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-ingress-association" {
+  route_table_id = aws_route_table.waapVpc-ingress-rt.id
+  gateway_id     = var.volIgw
+}
+
+resource "aws_route_table" "waapVpc-extNlbAz1-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1a"]
+  }
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-extNlbAz1-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-extNlbAz1-association" {
+  subnet_id      = aws_subnet.waapVpc-extNlb[0].id
+  route_table_id = aws_route_table.waapVpc-extNlbAz1-rt.id
+}
+
+resource "aws_route_table" "waapVpc-extNlbAz2-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1b"]
+  }
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-extNlbAz2-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-extNlbAz2-association" {
+  subnet_id      = aws_subnet.waapVpc-extNlb[1].id
+  route_table_id = aws_route_table.waapVpc-extNlbAz2-rt.id
+}
+
+resource "aws_route_table" "waapVpc-extNlbAz3-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1c"]
+  }
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-extNlbAz3-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-extNlbAz3-association" {
+  subnet_id      = aws_subnet.waapVpc-extNlb[2].id
+  route_table_id = aws_route_table.waapVpc-extNlbAz3-rt.id
+}

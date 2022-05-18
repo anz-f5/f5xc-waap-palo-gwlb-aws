@@ -136,96 +136,6 @@ resource "aws_route_table_association" "servicesVpc-gwlbEp2-association" {
   route_table_id = aws_route_table.servicesVpc-gwlbEp2-rt.id
 }
 
-resource "aws_route_table" "servicesVpc-twgSubnet1-rt" {
-
-  vpc_id = aws_vpc.servicesVpc.id
-
-  route {
-    cidr_block      = "0.0.0.0/0"
-    vpc_endpoint_id = module.vmseries-modules_gwlb_ep2["next_hop_set"].ids["us-east-1a"]
-  }
-
-  tags = {
-    Name = "${var.prefix}-servicesVpc-twgSubnet1-rt"
-  }
-}
-
-resource "aws_route_table_association" "servicesVpc-twgSubnet1-association" {
-  subnet_id      = aws_subnet.servicesVpc-tsg[0].id
-  route_table_id = aws_route_table.servicesVpc-twgSubnet1-rt.id
-}
-
-resource "aws_route_table" "servicesVpc-twgSubnet2-rt" {
-
-  vpc_id = aws_vpc.servicesVpc.id
-
-  route {
-    cidr_block      = "0.0.0.0/0"
-    vpc_endpoint_id = module.vmseries-modules_gwlb_ep2["next_hop_set"].ids["us-east-1b"]
-  }
-
-  tags = {
-    Name = "${var.prefix}-servicesVpc-twgSubnet2-rt"
-  }
-}
-
-resource "aws_route_table_association" "servicesVpc-twgSubnet2-association" {
-  subnet_id      = aws_subnet.servicesVpc-tsg[1].id
-  route_table_id = aws_route_table.servicesVpc-twgSubnet2-rt.id
-}
-
-resource "aws_route_table" "servicesVpc-twgSubnet3-rt" {
-
-  vpc_id = aws_vpc.servicesVpc.id
-
-  route {
-    cidr_block      = "0.0.0.0/0"
-    vpc_endpoint_id = module.vmseries-modules_gwlb_ep2["next_hop_set"].ids["us-east-1c"]
-  }
-
-  tags = {
-    Name = "${var.prefix}-servicesVpc-twgSubnet3-rt"
-  }
-}
-
-resource "aws_route_table_association" "servicesVpc-twgSubnet3-association" {
-  subnet_id      = aws_subnet.servicesVpc-tsg[2].id
-  route_table_id = aws_route_table.servicesVpc-twgSubnet3-rt.id
-}
-
-module "vmseries-modules" {
-  source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb"
-  version = "0.2.0"
-
-  name             = "${var.prefix}-servicesVpc-gwlb"
-  vpc_id           = aws_vpc.servicesVpc.id
-  subnets          = { for az in aws_subnet.servicesVpc-data : az.availability_zone => { "id" : az.id } }
-  target_instances = { for instance in aws_instance.fwInstance : instance.id => { "id" = instance.id } }
-
-}
-
-module "vmseries-modules_gwlb_ep1" {
-  source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb_endpoint_set"
-  version = "0.2.0"
-
-  name              = "${var.prefix}-ep1-1"
-  gwlb_service_name = module.vmseries-modules.endpoint_service.service_name
-  vpc_id            = aws_vpc.waapVpc.id
-  subnets           = { for az in aws_subnet.waapVpc-ep1 : az.availability_zone => { "id" : az.id } }
-
-}
-
-module "vmseries-modules_gwlb_ep2" {
-  source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb_endpoint_set"
-  version = "0.2.0"
-
-  name              = "${var.prefix}-ep2-1"
-  gwlb_service_name = module.vmseries-modules.endpoint_service.service_name
-  vpc_id            = aws_vpc.servicesVpc.id
-  subnets           = { for az in aws_subnet.servicesVpc-ep2 : az.availability_zone => { "id" : az.id } }
-
-}
-
 resource "aws_network_interface" "fw-mgmt-eni" {
   count             = length(var.servicesVpc)
   subnet_id         = aws_subnet.servicesVpc-mgmt[count.index].id
@@ -355,3 +265,20 @@ resource "aws_instance" "fwInstance" {
     Name = "${var.prefix}-fw-${var.servicesVpc[count.index].name}"
   }
 }
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
+  subnet_ids                                      = [for subnet in aws_subnet.servicesVpc-tsg : subnet.id]
+  transit_gateway_id                              = aws_ec2_transit_gateway.transitGateway.id
+  vpc_id                                          = aws_vpc.servicesVpc.id
+  transit_gateway_default_route_table_association = "false"
+  transit_gateway_default_route_table_propagation = "false"
+  appliance_mode_support                          = "enable"
+
+
+  tags = {
+    "Name" = "${var.prefix}-servicesVpcTsgAttach"
+  }
+}
+
+
+
