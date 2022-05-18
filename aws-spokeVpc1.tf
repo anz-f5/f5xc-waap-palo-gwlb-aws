@@ -77,7 +77,7 @@ resource "aws_route_table" "spokeVpc1-main-rt" {
   }
 
   route {
-    cidr_block = "1.123.221.0/24"
+    cidr_block = var.adminIp
     gateway_id = aws_internet_gateway.spokeVpc1-igw.id
   }
 
