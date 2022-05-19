@@ -122,6 +122,16 @@ resource "aws_route_table" "waapVpc-gwlbEp1-rt" {
     gateway_id = var.volIgw
   }
 
+  route {
+    cidr_block         = "10.2.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  route {
+    cidr_block         = "10.3.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
   tags = {
     Name = "${var.prefix}-waapVpc-gwlbEp1-rt"
   }

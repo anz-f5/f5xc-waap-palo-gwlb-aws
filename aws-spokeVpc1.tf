@@ -66,6 +66,13 @@ module "spokeVpc1-ec2Instance" {
   vpc_security_group_ids      = [aws_security_group.spokeVpc1-sg.id]
   subnet_id                   = aws_subnet.spokeVpc1-data[count.index].id
   associate_public_ip_address = "true"
+
+  tags = {
+    for k, v in merge({
+
+      },
+    var.default_vm_tags) : k => v
+  }
 }
 
 resource "aws_route_table" "spokeVpc1-main-rt" {
@@ -83,6 +90,11 @@ resource "aws_route_table" "spokeVpc1-main-rt" {
 
   route {
     cidr_block = "54.165.17.230/32"
+    gateway_id = aws_internet_gateway.spokeVpc1-igw.id
+  }
+
+  route {
+    cidr_block = "185.125.190.36/32"
     gateway_id = aws_internet_gateway.spokeVpc1-igw.id
   }
 

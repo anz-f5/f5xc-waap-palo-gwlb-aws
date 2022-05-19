@@ -90,24 +90,3 @@ resource "volterra_tf_params_action" "apply_aws_vpc" {
   ignore_on_update = false
 }
 
-
-resource "aws_route_table" "waapVpc-intNlb-rt" {
-  vpc_id = aws_vpc.waapVpc.id
-
-  route {
-    cidr_block         = "0.0.0.0/0"
-    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
-
-  }
-
-  tags = {
-    Name = "${var.prefix}-waapVpc-intNlb-rt"
-  }
-}
-
-resource "aws_route_table_association" "waapVpc-intNlb-association" {
-  count          = length(aws_subnet.waapVpc-intNlb)
-  subnet_id      = aws_subnet.waapVpc-intNlb[count.index].id
-  route_table_id = aws_route_table.waapVpc-intNlb-rt.id
-}
-

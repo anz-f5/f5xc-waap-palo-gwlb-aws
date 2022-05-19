@@ -261,9 +261,14 @@ resource "aws_instance" "fwInstance" {
   user_data            = "mgmt-interface-swap=enable\nplugin-op-commands=aws-gwlb-inspect:enable\n${var.user_data}"
 
   key_name = aws_key_pair.ssh-keypair.key_name
+
   tags = {
-    Name = "${var.prefix}-fw-${var.servicesVpc[count.index].name}"
+    for k, v in merge({
+      Name = "${var.prefix}-fw-${var.servicesVpc[count.index].name}"
+      },
+    var.default_vm_tags) : k => v
   }
+
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {

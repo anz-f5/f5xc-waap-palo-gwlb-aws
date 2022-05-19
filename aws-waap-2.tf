@@ -102,3 +102,98 @@ resource "aws_route_table_association" "waapVpc-extNlbAz3-association" {
   subnet_id      = aws_subnet.waapVpc-extNlb[2].id
   route_table_id = aws_route_table.waapVpc-extNlbAz3-rt.id
 }
+
+resource "aws_route_table" "waapVpc-ingressInternal-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "10.1.60.0/24"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1a"]
+  }
+
+  route {
+    cidr_block      = "10.1.61.0/24"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1b"]
+  }
+
+  route {
+    cidr_block      = "10.1.62.0/24"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1c"]
+  }
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-ingressInternal-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-ingressInternal-association" {
+  count          = length(aws_subnet.waapVpc-tsg)
+  subnet_id      = aws_subnet.waapVpc-tsg[count.index].id
+  route_table_id = aws_route_table.waapVpc-ingressInternal-rt.id
+}
+
+resource "aws_route_table" "waapVpc-intNlbAz1-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1a"]
+  }
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-intNlbAz1-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-intNlbAz1-association" {
+  subnet_id      = aws_subnet.waapVpc-intNlb[0].id
+  route_table_id = aws_route_table.waapVpc-intNlbAz1-rt.id
+}
+
+resource "aws_route_table" "waapVpc-intNlbAz2-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1b"]
+  }
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-intNlbAz2-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-intNlbAz2-association" {
+  subnet_id      = aws_subnet.waapVpc-intNlb[1].id
+  route_table_id = aws_route_table.waapVpc-intNlbAz2-rt.id
+}
+
+resource "aws_route_table" "waapVpc-intNlbAz3-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    vpc_endpoint_id = module.vmseries-modules_gwlb_ep1["next_hop_set"].ids["us-east-1c"]
+  }
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-intNlbAz3-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-intNlbAz3-association" {
+  subnet_id      = aws_subnet.waapVpc-intNlb[2].id
+  route_table_id = aws_route_table.waapVpc-intNlbAz3-rt.id
+}
