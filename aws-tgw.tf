@@ -100,8 +100,8 @@ resource "aws_ec2_transit_gateway_route" "SpokeVpc2toServicesVpc" {
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.tgw-spokeVpc2-rt.id
 }
 
-resource "aws_ec2_transit_gateway_route" "SpokeVpc2toVoltInternal" {
-  destination_cidr_block         = "10.1.8.0/21"
+resource "aws_ec2_transit_gateway_route" "SpokeVpc1toWaapVpc" {
+  destination_cidr_block         = "10.1.0.0/16"
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.waapVpcTsgAttach.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.tgw-spokeVpc2-rt.id
 }
