@@ -30,3 +30,4 @@ This solution achieves the following objectives,
 
 - Outbound Internet traffic from spoke VPC's gets inspected by Palo at L4/L7
 
+![image info](./files/DetailedDesign.pdf)
