@@ -64,8 +64,27 @@ Once traffic arrives on the NLB, it gets load balanced to the WAAP cluster nodes
 
 For internal WAAP clients, when traffic exits out from the spoke VPC, it gets routed to the WAAP VPC, and upon entering the WAAP VPC, traffic is steered towards the GWLB endpoint and the rest of the traffic flow mirrors the previous use case where traffic comes in from the Internet.
 
-With East-West traffic, where traffic flows between spoke VPC's, routing rules steer them towards the GWLB endpoint in the Security VPC as they exit out from the source spoke VPC. Once traffic is screened by the Palo's they are then routed to the destination spoke VPC. This traffic pattern does not involve WAAP and purely rests with the Palo FW's.
+With East-West bound traffic, where traffic flows between spoke VPC's, routing rules steer them towards the GWLB endpoint in the Security VPC as they exit out from the source spoke VPC. Once traffic is screened by the Palo's they are then routed to the destination spoke VPC. This traffic pattern does not involve WAAP and purely rests with the Palo FW's.
 
-Lastly for spoke VPC's Internet bound traffic, they are steered towards the Palo's when traffic exits out from the spoke VPC, once traffic is done with screening, they are routed out via a NGW deplyed in the Security VPC.
+Lastly for spoke VPC's Internet bound traffic, they are steered towards the Palo's when traffic exits out from the spoke VPC, once traffic is done with screening, they are routed out via a NGW deplyed in the Security VPC. This traffic pattern also does not involve WAAP.
+
+## PoC Environment
+
+I have built out a PoC environment that implementes this solution with the following detailed design diagram.
 
 ![image info](./files/DetailedDesign.png)
+
+## Terraform
+
+The build leverages Terraform and the entire environment can be provisioned within 10 minutes. For the benefit of troubleshooting, the Terraform code is broken down with file names to indicate the subset of the environemnt that each file is building.
+
+The Terraform code also uses third party modules to build the following list of components:
+
+- WAAP site
+
+- Internet and internal facing NLB
+
+- GWLB and GWLB endpoints
+
+- Ubuntu VM
+
