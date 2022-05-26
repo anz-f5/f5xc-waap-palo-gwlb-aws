@@ -30,4 +30,42 @@ This solution achieves the following objectives,
 
 - Outbound Internet traffic from spoke VPC's gets inspected by Palo at L4/L7
 
+## Architecture
+
+The architecture auguments an existing documented solution made available via a deployment guide from Palo, titled 'VM-Series Integration with an AWS Gateway Load Balancer', which is referenced here at <https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer>
+
+The new architecture that this solution relies upon makes a number of major changes as listed below,
+
+- Added a new VPC for WAAP that houses the WAAP cluster of three nodes (one per AZ), an IGW, an Internet NLB, an internal NLB as well as 3 x GWLB endpoints (one per AZ)
+
+- Complete removal of IGW, GWLB endpoints and load balancers within spoke VPC's
+
+- Significant changes in routing to ensure traffic is steered correctly
+
+## Traffic traversal
+
+Two types of traffic patterns are addressed by this solution.
+
+- North-South bound
+
+- East-West bound
+
+The North-South bound refers to traffic originated from the Internet or from within a spoke VPC (e.g., VM1) and destined to an app (e.g., <https://app1.x>) proxy-ed through the WAAP.
+
+In this case, you create an app with an associated FQDN via the WAAP, have it published both on the external and internal interfaces of the WAAP cluster nodes and then map this FQDN as a CNAME to the NLB. For traffic coming in from the Internet, the FQDN is mapped to the Internet facing NLB; for internal traffic, map it to the internal NLB.
+
+The Internet facing NLB load balances traffic to the WAAP cluster nodes' external interfaces, and the internal facing NLB load balances traffic to their internal interfaces.
+
+When an Internet client hits the app at <https://app1.x>, DNS resolves to NLB's public IP. Traffic destined to the public IP arrives at the AWS IGW and the associated ingress routing rule sends them to a GWLB endpoint that encapsulates the traffic first prior to delivering them to the Security VPC where traffic is load balanced to a Palo FW for screening. Once Palo is done, it passes the traffic back to the GWLB and the traffic eventually makes its way back to the GWLB endpoint at the WAAP VPC. The GWLB endpoint releases that traffic and routing rule sends it to the NLB.
+
+What the above shows is that Internet traffic is screened by the Palo FW prior to it arriving on the NLB.
+
+Once traffic arrives on the NLB, it gets load balanced to the WAAP cluster nodes at L4. WAAP screens the traffic at L7 prior to proxy it to the backend application servers in a spoke VPC.
+
+For internal WAAP clients, when traffic exits out from the spoke VPC, it gets routed to the WAAP VPC, and upon entering the WAAP VPC, traffic is steered towards the GWLB endpoint and the rest of the traffic flow mirrors the previous use case where traffic comes in from the Internet.
+
+With East-West traffic, where traffic flows between spoke VPC's, routing rules steer them towards the GWLB endpoint in the Security VPC as they exit out from the source spoke VPC. Once traffic is screened by the Palo's they are then routed to the destination spoke VPC. This traffic pattern does not involve WAAP and purely rests with the Palo FW's.
+
+Lastly for spoke VPC's Internet bound traffic, they are steered towards the Palo's when traffic exits out from the spoke VPC, once traffic is done with screening, they are routed out via a NGW deplyed in the Security VPC.
+
 ![image info](./files/DetailedDesign.png)
