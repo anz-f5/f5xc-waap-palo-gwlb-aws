@@ -56,23 +56,25 @@ In this case, you create an app with an associated FQDN via the WAAP, have it pu
 
 The Internet facing NLB load balances traffic to the WAAP cluster nodes' external interfaces, and the internal facing NLB load balances traffic to their internal interfaces.
 
-When an Internet client hits the app at <https://app1.x>, DNS resolves to NLB's public IP. Traffic destined to the public IP arrives at the AWS IGW and the associated ingress routing rule sends them to a GWLB endpoint that encapsulates the traffic first prior to delivering them to the Security VPC where traffic is load balanced to a Palo FW for screening. Once Palo is done, it passes the traffic back to the GWLB and the traffic eventually makes its way back to the GWLB endpoint at the WAAP VPC. The GWLB endpoint releases that traffic and routing rule sends it to the NLB.
+When an Internet traffic hits the app at <https://app1.x>, DNS resolves it to NLB's public IP. Traffic destined to the public IP arrives at the AWS IGW and the associated ingress routing rule sends them to a GWLB endpoint that encapsulates the traffic first prior to delivering them to the Security VPC where traffic is load balanced to a Palo FW for decapsulation and screening. Once Palo is done, it encapsulates and passes the traffic back to the GWLB and the traffic eventually makes its way back to the GWLB endpoint at the WAAP VPC. The GWLB endpoint decapsulates and releases that traffic and routing rule sends it to the NLB.
 
 What the above shows is that Internet traffic is screened by the Palo FW prior to it arriving on the NLB.
 
 Once traffic arrives on the NLB, it gets load balanced to the WAAP cluster nodes at L4. WAAP screens the traffic at L7 prior to proxy it to the backend application servers in a spoke VPC.
 
-For internal WAAP clients, when traffic exits out from the spoke VPC, it gets routed to the WAAP VPC, and upon entering the WAAP VPC, traffic is steered towards the GWLB endpoint and the rest of the traffic flow mirrors the previous use case where traffic comes in from the Internet.
+For internal WAAP clients, when traffic exits out from the spoke VPC, it gets routed to the WAAP VPC, and upon entering the WAAP VPC, traffic is steered towards the GWLB endpoint and the rest of the traffic flow mirrors the previous example where traffic comes in from the Internet.
 
 With East-West bound traffic, where traffic flows between spoke VPC's, routing rules steer them towards the GWLB endpoint in the Security VPC as they exit out from the source spoke VPC. Once traffic is screened by the Palo's they are then routed to the destination spoke VPC. This traffic pattern does not involve WAAP and purely rests with the Palo FW's.
 
-Lastly for spoke VPC's Internet bound traffic, they are steered towards the Palo's when traffic exits out from the spoke VPC, once traffic is done with screening, they are routed out via a NGW deplyed in the Security VPC. This traffic pattern also does not involve WAAP.
+Lastly, for spoke VPC originated Internet bound traffic, they are steered towards the GWLB endpoint in the Security VPC when traffic exits out from the spoke VPC, once Palo is done with screening, traffic is routed out via the NGW out to the Internet. This traffic pattern also does not involve WAAP.
 
 ## PoC Environment
 
 I have built out a PoC environment that implementes this solution with the following detailed design diagram.
 
 ![image info](./files/DetailedDesign.png)
+
+The PDF version is [here](./files/DetailedDesign.pdf).
 
 ## Terraform
 
@@ -88,3 +90,10 @@ The Terraform code also uses third party modules to build the following list of 
 
 - Ubuntu VM
 
+## Remarks
+
+- There are numerous route tables in this design as route tables are subnet specific in AWS. When traffic exits out from a spoke VPC (i.e., spokeVPC1), the route table associated with the VPC attachment (i.e., TGW-spokeVpc1-rt) dictates where traffic is sent to. When traffic enters a VPC, the route table associated with the subnets specified for VPC attachment is used to steer that ingress traffic.
+
+- The WAAP site is provisioned via the Volterra Terraform module and as such a slight modification must be made to subnet association in order to support this design. Specifically, the subnets of the internal interfaces for WAAP nodes need to be disassociated from the route table that the module creates. This allows for those subnets to be associated with a different route table.
+
+- The Volterra Terraform module interfaces with the F5XC and creates a site there, and F5XC will in turn generate the provisioning code to deployment objects in AWS. This meant that your local Terraform state file does not track what's deployed in AWS regarding the various components comprising the WAAP site.

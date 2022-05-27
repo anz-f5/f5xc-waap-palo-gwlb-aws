@@ -46,3 +46,15 @@ variable "default_vm_tags" {
   }
 }
 
+variable "vmAmi" {
+  description = "AMI of Ubuntu in us-east-1"
+  type        = string
+  default     = "ami-0c4f7023847b90238"
+}
+
+variable "vmInstanceType" {
+  description = "Instance type of Ubuntu vm"
+  type        = string
+  default     = "t2.micro"
+}
+

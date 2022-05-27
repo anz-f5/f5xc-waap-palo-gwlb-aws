@@ -53,19 +53,14 @@ resource "aws_subnet" "spokeVpc1-tsg" {
   }
 }
 
-module "spokeVpc1-ec2Instance" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 3.0"
-
-  name                        = "${var.prefix}-spokeVpc1Ubuntu1"
+resource "aws_instance" "spokeVpc1-vm1" {
   count                       = length(var.spokeVpc1)
-  ami                         = "ami-0c4f7023847b90238"
-  instance_type               = "t2.micro"
+  ami                         = var.vmAmi
+  instance_type               = var.vmInstanceType
   key_name                    = aws_key_pair.ssh-keypair.key_name
-  monitoring                  = false
-  vpc_security_group_ids      = [aws_security_group.spokeVpc1-sg.id]
-  subnet_id                   = aws_subnet.spokeVpc1-data[count.index].id
   associate_public_ip_address = "true"
+  subnet_id                   = aws_subnet.spokeVpc1-data[count.index].id
+  vpc_security_group_ids      = [aws_security_group.spokeVpc1-sg.id]
 
   tags = {
     for k, v in merge({

@@ -103,6 +103,10 @@ resource "aws_route_table" "waapVpc-internal-rt" {
 
   }
 
+  depends_on = [
+    volterra_tf_params_action.apply_aws_vpc
+  ]
+
   tags = {
     Name = "${var.prefix}-waapVpc-internal-rt"
   }
