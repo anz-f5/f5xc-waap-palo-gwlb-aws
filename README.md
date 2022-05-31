@@ -56,7 +56,7 @@ In this case, you create an app with an associated FQDN in WAAP, have it publish
 
 The Internet facing NLB load balances traffic to the WAAP cluster nodes' external interfaces, and the internal facing NLB load balances traffic to their internal interfaces.
 
-When an Internet traffic hits the app at <https://app1.x>, DNS resolves it to NLB's public IP. Traffic destined to the public IP arrives at the AWS IGW and the associated ingress routing rule sends them to a GWLB endpoint that encapsulates the traffic first prior to delivering them to the Security VPC where traffic is load balanced to a Palo FW for decapsulation and screening. Once Palo is done, it encapsulates and passes the traffic back to the GWLB and the traffic eventually makes its way back to the GWLB endpoint at the WAAP VPC. The GWLB endpoint decapsulates and releases that traffic and routing rule sends it to the NLB.
+When Internet traffic hits the app at <https://app1.x>, DNS resolves the FQDN to NLB's public IP's. Traffic to a public IP is then translated to an associated private IP that is owned by the NLB in a chosen AZ. As traffic for NLB destined to that private IP arrives at the AWS IGW, the associated ingress routing rule sends them to a GWLB endpoint that encapsulates the traffic first prior to delivering them to the Security VPC where traffic is load balanced to a Palo FW for decapsulation and screening. Once Palo is done, it encapsulates and passes the traffic back to the GWLB and the traffic eventually makes its way back to the GWLB endpoint at the WAAP VPC. The GWLB endpoint decapsulates and releases that traffic and routing rule finally sends it to the NLB.
 
 What the above shows is that Internet traffic is screened by the Palo FW prior to it arriving on the NLB.
 
@@ -90,12 +90,20 @@ The Terraform code also uses third party modules to build the following list of 
 
 ## Remarks
 
+- Three WAAP nodes are used to form a cluster in this solution, this is due to WAAP nodes are Kubernetes based with `etcd` datastore. `etcd` has a fault tolerence characteritic that's documented here <https://etcd.io/docs/v3.5/faq/#what-is-failure-tolerance>. In other words, three nodes provide a failure tolerance of one node. With a two node Kubernetes cluster, there is no fault tolerance.
+
+- With the three WAAP nodes, I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumes a GWLB endpoint in the same AZ, three endpoints are created - one per AZ (i.e., az[123]-ep1 in design diagram). As each endpoint is mapped to an associated AZ, I have also used three Palo FW's with each one Palo FW per AZ for consistency.
+
 - There are numerous route tables in this design as route tables are subnet specific in AWS. When traffic exits out from a spoke VPC (i.e., spokeVPC1), the route table associated with the VPC attachment (i.e., TGW-spokeVpc1-rt) dictates where traffic is sent to. When traffic enters a VPC, the route table associated with the subnets specified for VPC attachment is used to steer that ingress traffic.
 
 - The Volterra Terraform module interfaces with the F5XC and creates a site there, and F5XC will in turn generate the provisioning code to deploy objects in AWS. This meant that your local Terraform state file does not track what's deployed in AWS regarding the various components comprising the WAAP site.
 
 - The WAAP site is provisioned via the Volterra Terraform module and as such a slight modification must be made to subnet association in order to support this design. Specifically, the subnets of the internal interfaces for WAAP nodes need to be disassociated from the route table that the module creates. This allows for those subnets to be associated with a different route table.
 
-- Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run **terraform apply** to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table manually in AWS console. Once done, move all files from the temp directory back to the working directory and run **terraform apply** again to build out the rest.
+- Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run `terraform apply` to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table manually in AWS console. Once done, move all files from the temp directory back to the working directory and run `terraform apply` again to build out the rest.
 
-- The NLB's are provisioned using a third party module and it is difficult to get the IP's programmatically.
+- The WAAP site is provisioned using its own module that does not expose virtual machine or interface level state information, I found it easier to grab the private IP's of the external and internal interfaces of the WAAP nodes from AWS console and feed them directly to **waapBpcNlb.tf** when creating a the NLB's. If you have a better method, please let me know.
+
+- For the purpose of testing, I have created an IGW for spokeVpc1 and spokeVpc2 in Terraform code, as this allows you to connect to VM1 and VM2 more easily. A specific route (within **spokeVpc1/2-main-rt**) is also made available for VM1 and VM2 so they can perform apt update and install Nginx as a testing server.
+
+- For VM initiated Internet bound traffic, they exit out from GWLB endpoint2 in the Services VPC post inspection, with the next hop being a NAT Gateway. The Terraform code does not build out environment to support this type of traffic as it is covered in the Palo document referenced ealier on.
