@@ -90,6 +90,10 @@ The Terraform code also uses third party modules to build the following list of 
 
 ## Remarks
 
+- When you create an app in WAAP console in the form of a HTTP load balancer, you will need to advertise the app so it can be reached by your users. For this solution, advertise to the external and internal network of your site as shown below. This allows integration with the NLB's as all NLB needs to do is to forward traffic to the external or internal interfaces of the WAAP nodes.
+
+![image info](./files/vipAdvertise.png)
+
 - Three WAAP nodes are used to form a cluster in this solution, this is due to WAAP nodes are Kubernetes based with `etcd` datastore. `etcd` has a fault tolerence characteritic that's documented here <https://etcd.io/docs/v3.5/faq/#what-is-failure-tolerance>. In other words, three nodes provide a failure tolerance of one node. With a two node Kubernetes cluster, there is no fault tolerance.
 
 - With the three WAAP nodes, I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumes a GWLB endpoint in the same AZ, three endpoints are created - one per AZ (i.e., az[123]-ep1 in design diagram). As each endpoint is mapped to an associated AZ, I have also used three Palo FW's with one per AZ for consistency.
@@ -107,3 +111,4 @@ The Terraform code also uses third party modules to build the following list of 
 - For the purpose of testing, I have created an IGW for spokeVpc1 and spokeVpc2 in Terraform code, as this allows you to connect to VM1 and VM2 more easily. A specific route (within **spokeVpc1/2-main-rt**) is also made available for VM1 and VM2 so they can perform apt update and install Nginx as a testing server.
 
 - For VM initiated Internet bound traffic, they exit out from GWLB endpoint2 in the Services VPC post inspection, with the next hop being a NAT Gateway. The Terraform code does not build out environment to support this type of traffic as it is covered in the Palo document referenced ealier on.
+
