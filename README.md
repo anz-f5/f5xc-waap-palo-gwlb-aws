@@ -1,4 +1,4 @@
-# How to integrate the F5 Web Application and API Protection service with Palo Alto VM-Series Firewalls within AWS
+# How to integrate the F5 Web Application and API Protection service with Palo Alto VM-Series Firewalls in AWS
 
 ## Overview
 
@@ -8,7 +8,7 @@ The WAAP can be consumed in two ways, the 1st  being consuming it as a pure SaaS
 
 With the 2nd option, in the context of an AWS deployment, traffic will hit an NLB and that NLB will then send traffic to a cluster of WAAP nodes. The NLB and WAAP nodes are automatically deployed by the F5XC management portal, but they are deployed in your AWS environemnt and this is referred to as a Customer Edge.
 
-This solution talks about the 2nd mode of WAAP consumption (Customer Edge) being integrated with a Palo Alto next-gen firewall solution deployed within a shared AWS environment.
+This solution talks about the 2nd mode of WAAP consumption (Customer Edge) being integrated with a Palo Alto next-gen firewall solution deployed in an AWS environment.
 
 ## Solution
 
@@ -32,7 +32,7 @@ This solution achieves the following objectives,
 
 ## Architecture
 
-The architecture auguments an existing documented solution made available via a deployment guide from Palo, titled 'VM-Series Integration with an AWS Gateway Load Balancer', which is referenced here at <https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer>
+The architecture auguments an existing documented solution being made available via a deployment guide from Palo, titled 'VM-Series Integration with an AWS Gateway Load Balancer', which is provided here for reference <https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer>
 
 The new architecture that this solution relies upon makes a number of major changes as listed below,
 
@@ -52,7 +52,7 @@ Two types of traffic patterns are addressed by this solution.
 
 The North-South bound refers to traffic originated from the Internet or from within a spoke VPC (e.g., VM1) and destined to an app (e.g., <https://app1.x>) proxy-ed through the WAAP.
 
-In this case, you create an app with an associated FQDN via the WAAP, have it published both on the external and internal interfaces of the WAAP cluster nodes and then map this FQDN as a CNAME to the NLB. For traffic coming in from the Internet, the FQDN is mapped to the Internet facing NLB; for internal traffic, map it to the internal NLB.
+In this case, you create an app with an associated FQDN in WAAP, have it published both on the external and internal interfaces of the WAAP cluster nodes and then map this FQDN as a CNAME to a NLB. For traffic coming in from the Internet, the FQDN is mapped to an Internet facing NLB; for internal traffic, map it to an internal NLB.
 
 The Internet facing NLB load balances traffic to the WAAP cluster nodes' external interfaces, and the internal facing NLB load balances traffic to their internal interfaces.
 
@@ -70,7 +70,7 @@ Lastly, for spoke VPC originated Internet bound traffic, they are steered toward
 
 ## PoC Environment
 
-I have built out a PoC environment that implementes this solution with the following detailed design diagram.
+I have built out a PoC environment that implementes this solution using the following detailed design diagram.
 
 ![image info](./files/DetailedDesign.png)
 
@@ -88,12 +88,14 @@ The Terraform code also uses third party modules to build the following list of 
 
 - GWLB and GWLB endpoints
 
-- Ubuntu VM
-
 ## Remarks
 
 - There are numerous route tables in this design as route tables are subnet specific in AWS. When traffic exits out from a spoke VPC (i.e., spokeVPC1), the route table associated with the VPC attachment (i.e., TGW-spokeVpc1-rt) dictates where traffic is sent to. When traffic enters a VPC, the route table associated with the subnets specified for VPC attachment is used to steer that ingress traffic.
 
+- The Volterra Terraform module interfaces with the F5XC and creates a site there, and F5XC will in turn generate the provisioning code to deploy objects in AWS. This meant that your local Terraform state file does not track what's deployed in AWS regarding the various components comprising the WAAP site.
+
 - The WAAP site is provisioned via the Volterra Terraform module and as such a slight modification must be made to subnet association in order to support this design. Specifically, the subnets of the internal interfaces for WAAP nodes need to be disassociated from the route table that the module creates. This allows for those subnets to be associated with a different route table.
 
-- The Volterra Terraform module interfaces with the F5XC and creates a site there, and F5XC will in turn generate the provisioning code to deployment objects in AWS. This meant that your local Terraform state file does not track what's deployed in AWS regarding the various components comprising the WAAP site.
+- Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run **terraform apply** to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table manually in AWS console. Once done, move all files from the temp directory back to the working directory and run **terraform apply** again to build out the rest.
+
+- The NLB's are provisioned using a third party module and it is difficult to get the IP's programmatically.

@@ -58,13 +58,13 @@ resource "aws_instance" "spokeVpc1-vm1" {
   ami                         = var.vmAmi
   instance_type               = var.vmInstanceType
   key_name                    = aws_key_pair.ssh-keypair.key_name
-  associate_public_ip_address = "true"
   subnet_id                   = aws_subnet.spokeVpc1-data[count.index].id
   vpc_security_group_ids      = [aws_security_group.spokeVpc1-sg.id]
+  associate_public_ip_address = "true"
 
   tags = {
     for k, v in merge({
-
+      Name = "${var.prefix}-spokeVpc1-vm1"
       },
     var.default_vm_tags) : k => v
   }
