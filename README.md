@@ -92,7 +92,7 @@ The Terraform code also uses third party modules to build the following list of 
 
 - Three WAAP nodes are used to form a cluster in this solution, this is due to WAAP nodes are Kubernetes based with `etcd` datastore. `etcd` has a fault tolerence characteritic that's documented here <https://etcd.io/docs/v3.5/faq/#what-is-failure-tolerance>. In other words, three nodes provide a failure tolerance of one node. With a two node Kubernetes cluster, there is no fault tolerance.
 
-- With the three WAAP nodes, I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumes a GWLB endpoint in the same AZ, three endpoints are created - one per AZ (i.e., az[123]-ep1 in design diagram). As each endpoint is mapped to an associated AZ, I have also used three Palo FW's with each one Palo FW per AZ for consistency.
+- With the three WAAP nodes, I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumes a GWLB endpoint in the same AZ, three endpoints are created - one per AZ (i.e., az[123]-ep1 in design diagram). As each endpoint is mapped to an associated AZ, I have also used three Palo FW's with one per AZ for consistency.
 
 - There are numerous route tables in this design as route tables are subnet specific in AWS. When traffic exits out from a spoke VPC (i.e., spokeVPC1), the route table associated with the VPC attachment (i.e., TGW-spokeVpc1-rt) dictates where traffic is sent to. When traffic enters a VPC, the route table associated with the subnets specified for VPC attachment is used to steer that ingress traffic.
 
@@ -100,9 +100,9 @@ The Terraform code also uses third party modules to build the following list of 
 
 - The WAAP site is provisioned via the Volterra Terraform module and as such a slight modification must be made to subnet association in order to support this design. Specifically, the subnets of the internal interfaces for WAAP nodes need to be disassociated from the route table that the module creates. This allows for those subnets to be associated with a different route table.
 
-- Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run `terraform apply` to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table manually in AWS console. Once done, move all files from the temp directory back to the working directory and run `terraform apply` again to build out the rest.
+- Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run `terraform apply` to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table in AWS console manually. Once done, move all files from the temp directory back to the working directory and run `terraform apply` again to build out the rest.
 
-- The WAAP site is provisioned using its own module that does not expose virtual machine or interface level state information, I found it easier to grab the private IP's of the external and internal interfaces of the WAAP nodes from AWS console and feed them directly to **waapBpcNlb.tf** when creating a the NLB's. If you have a better method, please let me know.
+- The WAAP site is provisioned using its own module that does not expose virtual machine or interface level state information, I found it easier to grab the private IP's of the external and internal interfaces of the WAAP nodes from AWS console and feed them directly to **waapVpcNlb.tf** when creating the NLB's. If you have a better method, please let me know.
 
 - For the purpose of testing, I have created an IGW for spokeVpc1 and spokeVpc2 in Terraform code, as this allows you to connect to VM1 and VM2 more easily. A specific route (within **spokeVpc1/2-main-rt**) is also made available for VM1 and VM2 so they can perform apt update and install Nginx as a testing server.
 
