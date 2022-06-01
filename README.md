@@ -32,7 +32,7 @@ This solution achieves the following objectives,
 
 ## Architecture
 
-The architecture auguments an existing documented solution being made available via a deployment guide from Palo, titled 'VM-Series Integration with an AWS Gateway Load Balancer', which is provided here for reference <https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer>
+The architecture auguments an existing documented solution being made available via a deployment guide from Palo, titled [VM-Series Integration with an AWS Gateway Load Balancer](https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer). **Please read this document to understand the original architecture**
 
 The new architecture that this solution relies upon makes a number of major changes as listed below,
 
@@ -90,6 +90,8 @@ The Terraform code also uses third party modules to build the following list of 
 
 ## Remarks
 
+- **Please read Palo's deployment guide to understand the original architecture**. [VM-Series Integration with an AWS Gateway Load Balancer](https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer) is a prereqsuite reading as this document serves as an augemention to that document.
+
 - When you create an app in WAAP console in the form of a HTTP load balancer, you will need to advertise the app so it can be reached by your users. For this solution, advertise to the external and internal network of your site as shown below. This allows integration with the NLB's as all NLB needs to do is to forward traffic to the external or internal interfaces of the WAAP nodes.
 
 ![image info](./files/vipAdvertise.png)
@@ -112,3 +114,4 @@ The Terraform code also uses third party modules to build the following list of 
 
 - For VM initiated Internet bound traffic, they exit out from GWLB endpoint2 in the Services VPC post inspection, with the next hop being a NAT Gateway. The Terraform code does not build out environment to support this type of traffic as it is covered in the Palo document referenced ealier on.
 
+- Once the environment is built, further configuration is required on the Palo FW's to make it work. Specifically, zones are needed to create the security boundaries, as well as the GWLB endpoints be associated with the subinterfaces created on the Palo's. As an example, you can create two subinterfaces under the data interface, and have them associated with two different security zones. Each subinterface is then associated with a GWLB endpoint, which binds East-West bound traffic to one subinterface and North-South bound traffic to the other subinterface. This is documented under Palo's deployment guide section titled: [Manual Integration of the VM-Series with a Gateway Load Balancer](https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer/integrate-the-vm-series-with-an-aws-gateway-load-balancer/associate-a-vpc-endpoint-with-a-vm-series-interface)

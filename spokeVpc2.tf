@@ -53,14 +53,27 @@ resource "aws_subnet" "spokeVpc2-tsg" {
   }
 }
 
+resource "aws_network_interface" "spokeVpc2-vm2-nic" {
+  subnet_id       = aws_subnet.spokeVpc2-data[0].id
+  private_ips     = ["10.3.0.4"]
+  security_groups = [aws_security_group.spokeVpc2-sg.id]
+}
+
+resource "aws_eip" "spokeVpc2-vm2-pip" {
+  vpc                       = true
+  network_interface         = aws_network_interface.spokeVpc2-vm2-nic.id
+  associate_with_private_ip = "10.3.0.4"
+}
+
 resource "aws_instance" "spokeVpc2-vm2" {
-  count                       = length(var.spokeVpc2)
-  ami                         = var.vmAmi
-  instance_type               = var.vmInstanceType
-  key_name                    = aws_key_pair.ssh-keypair.key_name
-  subnet_id                   = aws_subnet.spokeVpc2-data[count.index].id
-  vpc_security_group_ids      = [aws_security_group.spokeVpc2-sg.id]
-  associate_public_ip_address = "true"
+  ami           = var.vmAmi
+  instance_type = var.vmInstanceType
+  key_name      = aws_key_pair.ssh-keypair.key_name
+
+  network_interface {
+    network_interface_id = aws_network_interface.spokeVpc2-vm2-nic.id
+    device_index         = 0
+  }
 
   tags = {
     for k, v in merge({
