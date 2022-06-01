@@ -41,15 +41,15 @@ resource "aws_subnet" "spokeVpc1-data" {
   }
 }
 
-resource "aws_subnet" "spokeVpc1-tsg" {
+resource "aws_subnet" "spokeVpc1-tgw" {
   vpc_id                  = aws_vpc.spokeVpc1.id
   count                   = length(var.spokeVpc1)
-  cidr_block              = var.spokeVpc1[count.index].tsg_cidr
+  cidr_block              = var.spokeVpc1[count.index].tgw_cidr
   map_public_ip_on_launch = "false"
   availability_zone       = var.spokeVpc1[count.index].az
 
   tags = {
-    Name = "${var.prefix}-spokeVpc1-tsg-${var.spokeVpc1[count.index].name}"
+    Name = "${var.prefix}-spokeVpc1-tgw-${var.spokeVpc1[count.index].name}"
   }
 }
 
@@ -84,6 +84,7 @@ resource "aws_instance" "spokeVpc1-vm1" {
 }
 
 resource "aws_route_table" "spokeVpc1-main-rt" {
+
   vpc_id = aws_vpc.spokeVpc1.id
 
   route {
@@ -125,8 +126,8 @@ resource "aws_internet_gateway" "spokeVpc1-igw" {
   }
 }
 
-resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc1TsgAttach" {
-  subnet_ids                                      = [for subnet in aws_subnet.spokeVpc1-tsg : subnet.id]
+resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc1TgwAttach" {
+  subnet_ids                                      = [for subnet in aws_subnet.spokeVpc1-tgw : subnet.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.transitGateway.id
   vpc_id                                          = aws_vpc.spokeVpc1.id
   transit_gateway_default_route_table_association = "false"
@@ -134,7 +135,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokeVpc1TsgAttach" {
   appliance_mode_support                          = "enable"
 
   tags = {
-    "Name" = "${var.prefix}-spokeVpc1TsgAttach"
+    "Name" = "${var.prefix}-spokeVpc1TgwAttach"
   }
 }
 

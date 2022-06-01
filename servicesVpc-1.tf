@@ -61,15 +61,15 @@ resource "aws_subnet" "servicesVpc-mgmt" {
   }
 }
 
-resource "aws_subnet" "servicesVpc-tsg" {
+resource "aws_subnet" "servicesVpc-tgw" {
   vpc_id                  = aws_vpc.servicesVpc.id
   count                   = length(var.servicesVpc)
-  cidr_block              = var.servicesVpc[count.index].tsg_cidr
+  cidr_block              = var.servicesVpc[count.index].tgw_cidr
   map_public_ip_on_launch = "false"
   availability_zone       = var.servicesVpc[count.index].az
 
   tags = {
-    Name = "${var.prefix}-servicesVpc-tsg-${var.servicesVpc[count.index].name}"
+    Name = "${var.prefix}-servicesVpc-tgw-${var.servicesVpc[count.index].name}"
   }
 }
 
@@ -271,8 +271,8 @@ resource "aws_instance" "fwInstance" {
 
 }
 
-resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
-  subnet_ids                                      = [for subnet in aws_subnet.servicesVpc-tsg : subnet.id]
+resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTgwAttach" {
+  subnet_ids                                      = [for subnet in aws_subnet.servicesVpc-tgw : subnet.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.transitGateway.id
   vpc_id                                          = aws_vpc.servicesVpc.id
   transit_gateway_default_route_table_association = "false"
@@ -281,7 +281,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "servicesTsgAttach" {
 
 
   tags = {
-    "Name" = "${var.prefix}-servicesVpcTsgAttach"
+    "Name" = "${var.prefix}-servicesVpcTgwAttach"
   }
 }
 

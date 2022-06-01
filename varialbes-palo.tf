@@ -8,9 +8,9 @@ variable "servicesVpc" {
   description = "Services VPC Palo add-on"
   type        = list(map(string))
   default = [
-    { name = "az1", az = "us-east-1a", data_cidr = "10.0.30.0/24", mgmt_cidr = "10.0.40.0/24", tsg_cidr = "10.0.20.0/24", ep2_cidr = "10.0.10.0/24" },
-    { name = "az2", az = "us-east-1b", data_cidr = "10.0.31.0/24", mgmt_cidr = "10.0.41.0/24", tsg_cidr = "10.0.21.0/24", ep2_cidr = "10.0.11.0/24" },
-    { name = "az3", az = "us-east-1c", data_cidr = "10.0.32.0/24", mgmt_cidr = "10.0.42.0/24", tsg_cidr = "10.0.22.0/24", ep2_cidr = "10.0.12.0/24" }
+    { name = "az1", az = "us-east-1a", data_cidr = "10.0.30.0/24", mgmt_cidr = "10.0.40.0/24", tgw_cidr = "10.0.20.0/24", ep2_cidr = "10.0.10.0/24" },
+    { name = "az2", az = "us-east-1b", data_cidr = "10.0.31.0/24", mgmt_cidr = "10.0.41.0/24", tgw_cidr = "10.0.21.0/24", ep2_cidr = "10.0.11.0/24" },
+    { name = "az3", az = "us-east-1c", data_cidr = "10.0.32.0/24", mgmt_cidr = "10.0.42.0/24", tgw_cidr = "10.0.22.0/24", ep2_cidr = "10.0.12.0/24" }
 
   ]
 }

@@ -127,8 +127,8 @@ resource "aws_route_table" "waapVpc-ingressInternal-rt" {
 }
 
 resource "aws_route_table_association" "waapVpc-ingressInternal-association" {
-  count          = length(aws_subnet.waapVpc-tsg)
-  subnet_id      = aws_subnet.waapVpc-tsg[count.index].id
+  count          = length(aws_subnet.waapVpc-tgw)
+  subnet_id      = aws_subnet.waapVpc-tgw[count.index].id
   route_table_id = aws_route_table.waapVpc-ingressInternal-rt.id
 }
 

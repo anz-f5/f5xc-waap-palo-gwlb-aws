@@ -5,7 +5,7 @@ module "vmseries-modules_gwlb" {
   name             = "${var.prefix}-servicesVpc-gwlb"
   vpc_id           = aws_vpc.servicesVpc.id
   subnets          = { for az in aws_subnet.servicesVpc-data : az.availability_zone => { "id" : az.id } }
-  target_instances = { for instance in aws_instance.fwInstance : instance.id => { "id" = instance.id } }
+  target_instances = { for index, instance in aws_instance.fwInstance : index => { "id" = instance.id } }
 
 }
 
@@ -39,7 +39,7 @@ resource "aws_route_table" "servicesVpc-twgSubnet1-rt" {
 }
 
 resource "aws_route_table_association" "servicesVpc-twgSubnet1-association" {
-  subnet_id      = aws_subnet.servicesVpc-tsg[0].id
+  subnet_id      = aws_subnet.servicesVpc-tgw[0].id
   route_table_id = aws_route_table.servicesVpc-twgSubnet1-rt.id
 }
 
@@ -62,7 +62,7 @@ resource "aws_route_table" "servicesVpc-twgSubnet2-rt" {
 }
 
 resource "aws_route_table_association" "servicesVpc-twgSubnet2-association" {
-  subnet_id      = aws_subnet.servicesVpc-tsg[1].id
+  subnet_id      = aws_subnet.servicesVpc-tgw[1].id
   route_table_id = aws_route_table.servicesVpc-twgSubnet2-rt.id
 }
 
@@ -85,6 +85,6 @@ resource "aws_route_table" "servicesVpc-twgSubnet3-rt" {
 }
 
 resource "aws_route_table_association" "servicesVpc-twgSubnet3-association" {
-  subnet_id      = aws_subnet.servicesVpc-tsg[2].id
+  subnet_id      = aws_subnet.servicesVpc-tgw[2].id
   route_table_id = aws_route_table.servicesVpc-twgSubnet3-rt.id
 }

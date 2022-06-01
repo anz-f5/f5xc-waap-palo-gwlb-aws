@@ -58,15 +58,15 @@ resource "aws_subnet" "waapVpc-ep1" {
   }
 }
 
-resource "aws_subnet" "waapVpc-tsg" {
+resource "aws_subnet" "waapVpc-tgw" {
   vpc_id                  = aws_vpc.waapVpc.id
   count                   = length(var.waapVpc)
-  cidr_block              = var.waapVpc[count.index].tsg_cidr
+  cidr_block              = var.waapVpc[count.index].tgw_cidr
   map_public_ip_on_launch = "false"
   availability_zone       = var.waapVpc[count.index].az
 
   tags = {
-    Name = "${var.prefix}-waapVpc-tsg-${var.waapVpc[count.index].name}"
+    Name = "${var.prefix}-waapVpc-tgw-${var.waapVpc[count.index].name}"
   }
 }
 
