@@ -37,15 +37,15 @@ module "external-nlb" {
       target_type      = "ip"
       targets = [
         {
-          target_id = "10.1.0.252"
+          target_id = var.externalNlbTarget[0]
           port      = 443
         },
         {
-          target_id = "10.1.1.225"
+          target_id = var.externalNlbTarget[1]
           port      = 443
         },
         {
-          target_id = "10.1.2.228"
+          target_id = var.externalNlbTarget[2]
           port      = 443
         }
       ]
@@ -57,15 +57,15 @@ module "external-nlb" {
       target_type      = "ip"
       targets = [
         {
-          target_id = "10.1.0.252"
+          target_id = var.externalNlbTarget[0]
           port      = 6443
         },
         {
-          target_id = "10.1.1.225"
+          target_id = var.externalNlbTarget[1]
           port      = 6443
         },
         {
-          target_id = "10.1.2.228"
+          target_id = var.externalNlbTarget[2]
           port      = 6443
         }
       ]
@@ -111,15 +111,15 @@ module "internal-nlb" {
       target_type      = "ip"
       targets = [
         {
-          target_id = "10.1.10.212"
+          target_id = var.internalNlbTarget[0]
           port      = 80
         },
         {
-          target_id = "10.1.11.73"
+          target_id = var.internalNlbTarget[1]
           port      = 80
         },
         {
-          target_id = "10.1.12.208"
+          target_id = var.internalNlbTarget[2]
           port      = 80
         }
       ]
@@ -132,15 +132,15 @@ module "internal-nlb" {
       target_type      = "ip"
       targets = [
         {
-          target_id = "10.1.10.212"
+          target_id = var.internalNlbTarget[0]
           port      = 443
         },
         {
-          target_id = "10.1.11.73"
+          target_id = var.internalNlbTarget[1]
           port      = 443
         },
         {
-          target_id = "10.1.12.208"
+          target_id = var.internalNlbTarget[2]
           port      = 443
         }
       ]
