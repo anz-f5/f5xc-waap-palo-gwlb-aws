@@ -1,3 +1,41 @@
+data "aws_internet_gateway" "volIgw" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [aws_vpc.waapVpc.id]
+  }
+}
+
+resource "aws_route_table" "waapVpc-gwlbEp1-rt" {
+
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = data.aws_internet_gateway.volIgw.id
+  }
+
+  route {
+    cidr_block         = "10.2.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  route {
+    cidr_block         = "10.3.0.0/16"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+  }
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-gwlbEp1-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-gwlbEp1-association" {
+
+  count          = length(aws_subnet.waapVpc-ep1)
+  subnet_id      = aws_subnet.waapVpc-ep1[count.index].id
+  route_table_id = aws_route_table.waapVpc-gwlbEp1-rt.id
+}
+
 module "vmseries-modules_gwlb_ep1" {
   source  = "PaloAltoNetworks/vmseries-modules/aws//modules/gwlb_endpoint_set"
   version = "0.2.0"
@@ -10,6 +48,11 @@ module "vmseries-modules_gwlb_ep1" {
 }
 
 resource "aws_route_table" "waapVpc-ingress-rt" {
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
   vpc_id = aws_vpc.waapVpc.id
 
   route {
@@ -33,8 +76,9 @@ resource "aws_route_table" "waapVpc-ingress-rt" {
 }
 
 resource "aws_route_table_association" "waapVpc-ingress-association" {
+
   route_table_id = aws_route_table.waapVpc-ingress-rt.id
-  gateway_id     = var.volIgw
+  gateway_id     = data.aws_internet_gateway.volIgw.id
 }
 
 resource "aws_route_table" "waapVpc-extNlbAz1-rt" {
@@ -104,6 +148,11 @@ resource "aws_route_table_association" "waapVpc-extNlbAz3-association" {
 }
 
 resource "aws_route_table" "waapVpc-ingressInternal-rt" {
+
+  depends_on = [
+    module.vmseries-modules_gwlb_ep1
+  ]
+
   vpc_id = aws_vpc.waapVpc.id
 
   route {
@@ -197,3 +246,24 @@ resource "aws_route_table_association" "waapVpc-intNlbAz3-association" {
   subnet_id      = aws_subnet.waapVpc-intNlb[2].id
   route_table_id = aws_route_table.waapVpc-intNlbAz3-rt.id
 }
+
+resource "aws_route_table" "waapVpc-internal-rt" {
+  vpc_id = aws_vpc.waapVpc.id
+
+  route {
+    cidr_block         = "0.0.0.0/0"
+    transit_gateway_id = aws_ec2_transit_gateway.transitGateway.id
+
+  }
+
+  tags = {
+    Name = "${var.prefix}-waapVpc-internal-rt"
+  }
+}
+
+resource "aws_route_table_association" "waapVpc-internal-association" {
+  count          = length(aws_subnet.waapVpc-internal)
+  subnet_id      = aws_subnet.waapVpc-internal[count.index].id
+  route_table_id = aws_route_table.waapVpc-internal-rt.id
+}
+

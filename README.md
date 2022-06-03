@@ -104,6 +104,8 @@ The Terraform code also uses third party modules to build the following list of 
 
 - The Volterra Terraform module interfaces with the F5XC and creates a site there, and F5XC will in turn generate the provisioning code to deploy objects in AWS. This meant that your local Terraform state file does not track what's deployed in AWS regarding the various components comprising the WAAP site.
 
+- When running the Terraform build, special care must be taken to ensure the sequence of the .tf files that get applied. This is due to a number of 3rd party modules being used to provision the various components and the way those modules are written does not allow Terraform to correctly figure out dependencies.
+
 - The WAAP site is provisioned via the Volterra Terraform module and as such a slight modification must be made to subnet association in order to support this design. Specifically, the subnets of the internal interfaces for WAAP nodes need to be disassociated from the route table that the module creates. This allows for those subnets to be associated with a different route table.
 
 - Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run `terraform apply` to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table in AWS console manually. Once done, move all files from the temp directory back to the working directory and run `terraform apply` again to build out the rest.
