@@ -96,7 +96,7 @@ The Terraform code also uses third party modules to build the following list of 
 
 ![image info](./files/vipAdvertise.png)
 
-- Three WAAP nodes are used to form a cluster in this solution, this is due to WAAP nodes are Kubernetes based with `etcd` datastore. `etcd` has a fault tolerence characteritic that's documented here <https://etcd.io/docs/v3.5/faq/#what-is-failure-tolerance>. In other words, three nodes provide a failure tolerance of one node. With a two node Kubernetes cluster, there is no fault tolerance.
+- Three WAAP nodes are used to form a cluster in this solution, this is due to WAAP nodes are Kubernetes based with `etcd` datastore. `etcd` has a fault tolerence characteritic that's documented here <https://etcd.io/docs/v3.5/faq/#what-is-failure-tolerance>. In other words, three nodes provide a failure tolerance of one node. With a two-node Kubernetes cluster, there is no fault tolerance.
 
 - With the three WAAP nodes, I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumes a GWLB endpoint in the same AZ, three endpoints are created - one per AZ (i.e., az[123]-ep1 in design diagram). As each endpoint is mapped to an associated AZ, I have also used three Palo FW's with one per AZ for consistency.
 
@@ -108,12 +108,16 @@ The Terraform code also uses third party modules to build the following list of 
 
 - The WAAP site is provisioned via the Volterra Terraform module and as such a slight modification must be made to subnet association in order to support this design. Specifically, the subnets of the internal interfaces for WAAP nodes need to be disassociated from the route table that the module creates. This allows for those subnets to be associated with a different route table.
 
-- Due to the abovementioned change, you might want to move all the .tf files to the 'temp' directory first, only leave waap-site.tf and variable files in the working directory. Run `terraform apply` to build out the WAAP site, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table in AWS console manually. Once done, move all files from the temp directory back to the working directory and run `terraform apply` again to build out the rest.
+- Due to the abovementioned change, you must apply the Terraform files in the following sequence.
+    1. waapVpc-preWaapsiteCreation.tf
+    2. waap-site.tf
+    3. Disassociate internal subnets from route table
+    4. Rest of .tf files
 
-- The WAAP site is provisioned using its own module that does not expose virtual machine or interface level state information, I found it easier to grab the private IP's of the external and internal interfaces of the WAAP nodes from AWS console and feed them directly to **waapVpcNlb.tf** when creating the NLB's. If you have a better method, please let me know.
+- One way to apply the .tf files in sequence is to move all the .tf files to the 'temp' directory first, only leave `waapVpc-preWaapsiteCreation.tf` and variable files in the working directory. Run `terraform apply` to build out an existing VPC environemnt. Once building an existing VPC environment is completed, move `waap-site.tf` from the temp directory to the working directory and re-apply Terraform. Wait until it finishes, disassociate the internal networks (e.g., 10.1.10/24, 10.1.11/24 and 10.1.12/24) from the route table in AWS console manually. Once done, move the rest of the files from the temp directory to the working directory and run `terraform apply` again to build out the rest.
 
 - For the purpose of testing, I have created an IGW for spokeVpc1 and spokeVpc2 in Terraform code, as this allows you to connect to VM1 and VM2 more easily. A specific route (within **spokeVpc1/2-main-rt**) is also made available for VM1 and VM2 so they can perform apt update and install Nginx as a testing server.
 
-- For VM initiated Internet bound traffic, they exit out from GWLB endpoint2 in the Services VPC post inspection, with the next hop being a NAT Gateway. The Terraform code does not build out environment to support this type of traffic as it is covered in the Palo document referenced ealier on.
+- For VM initiated Internet bound traffic, they exit out from GWLB endpoint2 in the Services VPC post inspection, with the next hop being a NAT Gateway. The Terraform code does not build out environment to support this type of traffic as it is covered in the Palo document referenced ealier on, and is left out as an exercise for the reader.
 
 - Once the environment is built, further configuration is required on the Palo FW's to make it work. Specifically, zones are needed to create the security boundaries, as well as the GWLB endpoints be associated with the subinterfaces created on the Palo's. As an example, you can create two subinterfaces under the data interface, and have them associated with two different security zones. Each subinterface is then associated with a GWLB endpoint, which binds East-West bound traffic to one subinterface and North-South bound traffic to the other subinterface. This is documented under Palo's deployment guide section titled: [Manual Integration of the VM-Series with a Gateway Load Balancer](https://docs.paloaltonetworks.com/vm-series/10-1/vm-series-deployment/set-up-the-vm-series-firewall-on-aws/vm-series-integration-with-gateway-load-balancer/integrate-the-vm-series-with-an-aws-gateway-load-balancer/associate-a-vpc-endpoint-with-a-vm-series-interface)
