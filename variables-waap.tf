@@ -25,15 +25,31 @@ variable "waapVpc" {
     { name = "az3", az = "us-east-1c", external_cidr = "10.1.2.0/24", internal_cidr = "10.1.12.0/24", workload_cidr = "10.1.22.0/24", ep1_cidr = "10.1.32.0/24", tgw_cidr = "10.1.42.0/24", extNlb_cidr = "10.1.52.0/24", intNlb_cidr = "10.1.62.0/24" }
   ]
 }
-
+/*
 variable "externalNlbTarget" {
   description = "Targets for external NLB. Should be IP's for the external interface of the WAAP nodes. POPULATE AFTER WAAP NODES ARE PROVISIONED"
-  type        = list((string))
+  type        = list(string)
   default     = ["10.1.0.252", "10.1.1.252", "10.1.2.252"]
 }
 
 variable "internalNlbTarget" {
   description = "Targets for external NLB. Should be IP's for the internal interface of the WAAP nodes. POPULATE AFTER WAAP NODES ARE PROVISIONED"
-  type        = list((string))
+  type        = list(string)
   default     = ["10.1.10.252", "10.1.11.252", "10.1.12.252"]
+}
+*/
+variable "intNic-filterTags" {
+  type = map(string)
+  default = {
+    "ves.io/interface-type" = "site-local-inside"
+    "ves-io-site-name"      = "cz-ce-aws"
+  }
+}
+
+variable "extNic-filterTags" {
+  type = map(string)
+  default = {
+    "ves.io/interface-type" = "site-local-outside"
+    "ves-io-site-name"      = "cz-ce-aws"
+  }
 }

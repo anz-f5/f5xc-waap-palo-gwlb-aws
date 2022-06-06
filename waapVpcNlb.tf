@@ -15,60 +15,21 @@ module "external-nlb" {
       backend_protocol = "TCP"
       backend_port     = 80
       target_type      = "ip"
-      targets = [
-        {
-          target_id = "10.1.0.252"
-          port      = 80
-        },
-        {
-          target_id = "10.1.1.225"
-          port      = 80
-        },
-        {
-          target_id = "10.1.2.228"
-          port      = 80
-        }
-      ]
+      targets          = [for _, nic in data.aws_network_interface.waapVpc-nodeExtNic : { "target_id" : nic.private_ip, "port" : 80 }]
     },
     {
       name_prefix      = "${var.prefix}-"
       backend_protocol = "TCP"
       backend_port     = 443
       target_type      = "ip"
-      targets = [
-        {
-          target_id = var.externalNlbTarget[0]
-          port      = 443
-        },
-        {
-          target_id = var.externalNlbTarget[1]
-          port      = 443
-        },
-        {
-          target_id = var.externalNlbTarget[2]
-          port      = 443
-        }
-      ]
+      targets          = [for _, nic in data.aws_network_interface.waapVpc-nodeExtNic : { "target_id" : nic.private_ip, "port" : 443 }]
     },
     {
       name_prefix      = "${var.prefix}-"
       backend_protocol = "TCP"
       backend_port     = 6443
       target_type      = "ip"
-      targets = [
-        {
-          target_id = var.externalNlbTarget[0]
-          port      = 6443
-        },
-        {
-          target_id = var.externalNlbTarget[1]
-          port      = 6443
-        },
-        {
-          target_id = var.externalNlbTarget[2]
-          port      = 6443
-        }
-      ]
+      targets          = [for _, nic in data.aws_network_interface.waapVpc-nodeExtNic : { "target_id" : nic.private_ip, "port" : 6443 }]
     }
   ]
 
@@ -109,20 +70,7 @@ module "internal-nlb" {
       backend_protocol = "TCP"
       backend_port     = 80
       target_type      = "ip"
-      targets = [
-        {
-          target_id = var.internalNlbTarget[0]
-          port      = 80
-        },
-        {
-          target_id = var.internalNlbTarget[1]
-          port      = 80
-        },
-        {
-          target_id = var.internalNlbTarget[2]
-          port      = 80
-        }
-      ]
+      targets          = [for _, nic in data.aws_network_interface.waapVpc-nodeIntNic : { "target_id" : nic.private_ip, "port" : 80 }]
     },
 
     {
@@ -130,20 +78,7 @@ module "internal-nlb" {
       backend_protocol = "TCP"
       backend_port     = 443
       target_type      = "ip"
-      targets = [
-        {
-          target_id = var.internalNlbTarget[0]
-          port      = 443
-        },
-        {
-          target_id = var.internalNlbTarget[1]
-          port      = 443
-        },
-        {
-          target_id = var.internalNlbTarget[2]
-          port      = 443
-        }
-      ]
+      targets          = [for _, nic in data.aws_network_interface.waapVpc-nodeIntNic : { "target_id" : nic.private_ip, "port" : 443 }]
     }
   ]
 
