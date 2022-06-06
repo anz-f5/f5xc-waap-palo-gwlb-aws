@@ -124,4 +124,4 @@ The Terraform code also uses third party modules to build the following list of 
 
 ## Conclusion
 
-The integration of WAAP and Palo provides you with a stronger security posture, with each complementing the other giving you the best of both worlds.
+The integration of F5 WAAP and Palo provides you with a stronger security posture, with each complementing the other giving you the best of both worlds.
